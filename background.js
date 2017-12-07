@@ -8,11 +8,9 @@ function start() {
         details.responseHeaders.push({
             name: 'Access-Control-Allow-Headers',
             value: 'Key, Sign, Content-Type'
-        })
-        return {
-            responseHeaders: details.responseHeaders
-        };
-    }, { urls: ['*://api.zaif.jp/*'] }, ['blocking', "responseHeaders"]);
+        });
+        return { responseHeaders: details.responseHeaders };
+    }, { urls: ['*://api.zaif.jp/tapi'] }, ['blocking', 'responseHeaders']);
 }
 
 chrome.runtime.onInstalled.addListener(() => start());

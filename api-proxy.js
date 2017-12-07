@@ -1,6 +1,6 @@
-let nonce = localStorage.getItem('ext_nonce') || 1000;
+let nonce = parseInt(localStorage.getItem('ext_nonce'), 10) || 1000;
 
-function check() {
+function checkApiKey() {
     if (!localStorage.getItem('api_key') || !localStorage.getItem('api_secret')) {
         alert('You must set API key & secret');
         return false;
@@ -21,12 +21,12 @@ function calcSignature(data) {
 }
 
 trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
-    if (!check()) return;
+    if (!checkApiKey()) return;
     const form = $(button.form).addClass('sending');
     button.disabled = true;
-    var comBoxes = $(".nav-tabs > li > a", ".commission-box");
+    var comBoxes = $('.nav-tabs > li > a', '.commission-box');
     comBoxes.each(function () {
-        $(this).addClass("disabled").on("click", function (a) {
+        $(this).addClass('disabled').on('click', () => {
             return false;
         });
     });
@@ -39,7 +39,7 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
     if (limit) tradeParam['limit'] = limit;
     const body = makeParam(tradeParam);
     const signature = calcSignature(body);
-    console.log(body, signature);
+    console.log(body);
     fetch('https://api.zaif.jp/tapi', {
         method: 'POST', body, headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -47,21 +47,23 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
             'Sign': signature
         }
     }).then(res => res.json()).then(json => {
-        trade.exchange_show_toast(json.success === 1 ? "success" : "danger", trade.translation_order, json.error || `Success: ID=${json.return.order_id}`);
+        trade.exchange_show_toast(json.success === 1 ? 'success' : 'danger', trade.translation_order, json.error || (json.success === 1 ? `Success: ID=${json.return.order_id}` : 'Unknown error'));
         trade.exchange_update_user_status(pair);
-        form.removeClass("sending");
+        form.removeClass('sending');
         button.disabled = false;
         comBoxes.each(function () {
-            $(this).removeClass("disabled").off("click");
+            $(this).removeClass('disabled').off('click');
         });
-    }).catch(() => {
-        form.removeClass("sending");
+    }).catch(err => {
+        console.error(err);
+        trade.exchange_show_toast('danger', trade.translation_order, 'Failed to API call');
+        form.removeClass('sending');
         button.disabled = false;
         comBoxes.each(function () {
-            $(this).removeClass("disabled").off("click");
+            $(this).removeClass('disabled').off('click');
         });
     });
-}
+};
 
 (() => {
     setInterval(() => {
@@ -69,14 +71,14 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
             $(elem).addClass('ext').parent().append($('<button>').addClass('btn btn-danger btn-xs').attr({
                 'data-id': $(elem).attr('data-id')
             }).text('取消2').click(function () {
-                if (!check()) return;
-                console.log($(this).attr('data-id'));
+                if (!checkApiKey()) return;
+                // console.log($(this).attr('data-id'));
                 if (!confirm('Are you sure?')) return;
                 const orderId = parseInt($(this).attr('data-id'), 10);
                 let tradeParam = { nonce: ++nonce, method: 'cancel_order', order_id: orderId };
                 const body = makeParam(tradeParam);
                 const signature = calcSignature(body);
-                console.log(body, signature);
+                console.log(body);
                 fetch('https://api.zaif.jp/tapi', {
                     method: 'POST', body, headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -84,17 +86,18 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
                         'Sign': signature
                     }
                 }).then(res => res.json()).then(json => {
-                    trade.exchange_update_user_status(trade.currency_pair)
-                    trade.exchange_show_toast_fixed(json.success === 1 ? "success" : "danger", trade.translation_order, json.error || 'Canceled');
-                }).catch(data => {
-                    alert('ERROR ' + data);
+                    trade.exchange_update_user_status(trade.currency_pair);
+                    console.log(json);
+                    trade.exchange_show_toast_fixed(json.success === 1 ? 'success' : 'danger', trade.translation_order, json.error || (json.success === 1 ? 'Canceled' : 'Unknown error'));
+                }).catch(err => {
+                    trade.exchange_show_toast_fixed('danger', trade.translation_order, 'Failed to call API');
+                    console.error(err);
                 });
             }));
         });
     }, 100);
-    $('.nav.navbar-nav').append($('<li>').append($('<a href="#">').text('Set Keys(E)').click(() => {
-        const modal = `
-<div class='modal fade'>
+    $('.sub-nav .nav.navbar-nav').append($('<li>').append($('<a href="#">').text('Set Keys(E)').click(() => {
+        const modal = `<div class='modal fade'>
 <div class='modal-dialog'>
 <div class='modal-content'>
 <div class='modal-body'>
@@ -102,16 +105,20 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
 <input id='api_key' class='form-control'/>
 <label>API Secret</label>
 <input id='api_secret' class='form-control'/>
+<hr />
 <button class='btn btn-success'>OK</button>
 </div>
 </div>
 </div>
 </div>`;
         const elem = $(modal).appendTo($('body')).modal('show');
+        $('#api_key', elem).val(localStorage.getItem('api_key') || '');
+        $('#api_secret', elem).val(localStorage.getItem('api_secret') || '');
         $('button', elem).click(() => {
             localStorage.setItem('api_key', $('#api_key', elem).val());
             localStorage.setItem('api_secret', $('#api_secret', elem).val());
             $(elem).modal('hide');
+            trade.exchange_show_toast_fixed('success', 'API Proxy', 'API Key set!');
         });
     })));
 })();
