@@ -22,7 +22,7 @@ function calcSignature(data) {
 const exchange_ajax_trade_form_prev = trade.exchange_ajax_trade_form;
 trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
     if (!checkApiKey()) {
-        trade.exchange_show_toast_fixed('danger', 'API Proxy', 'API Proxy need `API Keys`. Trying normal mode...');
+        trade.exchange_show_toast_fixed('danger', 'API Proxy', 'API Proxyを利用するにはAPIキーが必要です。拡張機能配布ページの説明を読んでご利用ください。通常の方法での注文を試みています・・・');
         exchange_ajax_trade_form_prev(endpoint, button, pair);
         return;
     }
@@ -60,7 +60,7 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
         });
     }).catch(err => {
         console.error(err);
-        trade.exchange_show_toast('danger', trade.translation_order, 'Failed to API call');
+        trade.exchange_show_toast('danger', trade.translation_order, 'API呼び出しに失敗しました');
         form.removeClass('sending');
         button.disabled = false;
         comBoxes.each(function () {
@@ -76,7 +76,7 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
                 'data-id': $(elem).attr('data-id')
             }).text('取消A').click(function () {
                 if (!checkApiKey()) {
-                    trade.exchange_show_toast_fixed('danger', 'API Proxy', 'You must set API key & secret');
+                    trade.exchange_show_toast_fixed('danger', 'API Proxy', 'API Proxyを利用するにはAPIキーが必要です。拡張機能配布ページの説明を読んでご利用ください');
                     return;
                 }
                 // console.log($(this).attr('data-id'));
@@ -97,7 +97,7 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
                     console.log(json);
                     trade.exchange_show_toast_fixed(json.success === 1 ? 'success' : 'danger', trade.translation_order, json.error || (json.success === 1 ? 'Canceled' : 'Unknown error'));
                 }).catch(err => {
-                    trade.exchange_show_toast_fixed('danger', trade.translation_order, 'Failed to call API');
+                    trade.exchange_show_toast_fixed('danger', trade.translation_order, 'API呼び出しに失敗しました');
                     console.error(err);
                 });
             }));
@@ -128,4 +128,7 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
             trade.exchange_show_toast_fixed('success', 'API Proxy', 'API Key set!');
         });
     })));
+    if(!checkApiKey()) {
+        trade.exchange_show_toast_fixed('success', 'API Proxy', 'APIキーが設定されていません！　拡張機能配布ページの説明をよく読んでご利用下さい');
+    }
 })();
