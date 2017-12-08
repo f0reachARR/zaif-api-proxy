@@ -2,7 +2,6 @@ let nonce = parseInt(localStorage.getItem('ext_nonce'), 10) || 1000;
 
 function checkApiKey() {
     if (!localStorage.getItem('api_key') || !localStorage.getItem('api_secret')) {
-        alert('You must set API key & secret');
         return false;
     }
     return true;
@@ -20,8 +19,13 @@ function calcSignature(data) {
     return hmac.getHMAC('HEX');
 }
 
+const exchange_ajax_trade_form_prev = trade.exchange_ajax_trade_form;
 trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
-    if (!checkApiKey()) return;
+    if (!checkApiKey()) {
+        trade.exchange_show_toast_fixed('danger', 'API Proxy', 'API Proxy need `API Keys`. Trying normal mode...');
+        exchange_ajax_trade_form_prev(endpoint, button, pair);
+        return;
+    }
     const form = $(button.form).addClass('sending');
     button.disabled = true;
     var comBoxes = $('.nav-tabs > li > a', '.commission-box');
@@ -70,8 +74,11 @@ trade.exchange_ajax_trade_form = (endpoint, button, pair) => {
         $('.cancel-order-btn:not(.ext)').each((i, elem) => {
             $(elem).addClass('ext').parent().append($('<button>').addClass('btn btn-danger btn-xs').attr({
                 'data-id': $(elem).attr('data-id')
-            }).text('取消2').click(function () {
-                if (!checkApiKey()) return;
+            }).text('取消A').click(function () {
+                if (!checkApiKey()) {
+                    trade.exchange_show_toast_fixed('danger', 'API Proxy', 'You must set API key & secret');
+                    return;
+                }
                 // console.log($(this).attr('data-id'));
                 if (!confirm('Are you sure?')) return;
                 const orderId = parseInt($(this).attr('data-id'), 10);
