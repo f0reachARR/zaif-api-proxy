@@ -1,6 +1,6 @@
 {
     "name": "Zaif API Proxy",
-    "description": "ZaifのAPI串",
+    "description": "ZaifのAPI串。最初にAPIキーを設定する必要があります！",
     "version": "0.1.1",
     "manifest_version": 2,
     "icons": {
